@@ -1,0 +1,16 @@
+{
+  "name": "module.extend",
+  "version": "0.0.0",
+  "description": "An extendable module class",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/mkay581/module.extend.git"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
+  "author": {
+    "name": "Mark Kennedy",
+    "url": "http://heyimmark.com"
+  }
+}
