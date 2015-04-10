@@ -22,6 +22,7 @@
     "test",
     "tests"
   ],
+  "main": "src/module.js",
   "dependencies": {
     "resource-manager-js": "*",
     "promise": "~0.2.2",
