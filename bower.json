@@ -1,6 +1,6 @@
 {
   "name": "module.js",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "homepage": "https://github.com/mkay581/module.js",
   "authors": [
     "Mark Kennedy <mkay581@gmail.com>"
@@ -22,6 +22,7 @@
     "test",
     "tests"
   ],
+  "main": "src/module.js",
   "dependencies": {
     "resource-manager-js": "*",
     "promise": "~0.2.2",
