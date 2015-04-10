@@ -1,7 +1,7 @@
 var sinon = require('sinon');
 var assert = require('assert');
 var Promise = require('promise');
-var ResourceManager = require('resource-manager');
+var ResourceManager = require('resource-manager-js');
 
 describe('Module', function () {
     it('should return correct instance when extending', function () {

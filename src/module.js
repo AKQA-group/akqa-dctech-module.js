@@ -3,7 +3,7 @@
 var Promise = require('promise');
 var _ = require('underscore');
 var $ = require('jquery');
-var ResourceManager = require('resource-manager');
+var ResourceManager = require('resource-manager-js');
 
 /**
  * @class Module
