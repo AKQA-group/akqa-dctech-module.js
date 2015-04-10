@@ -18,5 +18,9 @@
     "promise": "^7.0.0",
     "resource-manager-js": "0.0.0",
     "underscore": "^1.8.3"
+  },
+  "devDependencies": {
+    "build-tools": "^1.2.7",
+    "sinon": "^1.14.1"
   }
 }
