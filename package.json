@@ -1,6 +1,6 @@
 {
   "name": "module.extend",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "An extendable module class",
   "repository": {
     "type": "git",
