@@ -118,6 +118,24 @@ Module.prototype = {
             return Promise.resolve();
         }
     },
+    // TODO: merge the following function with one above
+
+    //load: function () {
+    //    var el = this.options.el;
+    //    return BaseModule.prototype.load.apply(this, arguments)
+    //        .then(function () {
+    //            if (el) {
+    //                el.classList.add('module-loaded');
+    //            }
+    //        }.bind(this))
+    //        .catch(function (e) {
+    //            if (el) {
+    //                el.classList.add('module-error');
+    //            }
+    //            console.log('MODULE ERROR!');
+    //            console.log(e.stack);
+    //        }.bind(this));
+    //},
 
     /**
      * Shows the page.
