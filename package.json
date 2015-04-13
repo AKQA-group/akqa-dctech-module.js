@@ -13,6 +13,7 @@
     "name": "Mark Kennedy",
     "url": "http://heyimmark.com"
   },
+  "main": "src/module.js",
   "dependencies": {
     "jquery": "^2.1.3",
     "promise": "^7.0.0",
