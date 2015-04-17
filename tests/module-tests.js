@@ -5,7 +5,7 @@ var ResourceManager = require('resource-manager-js');
 
 describe('Module', function () {
     it('should return correct instance when extending', function () {
-        var Module = require('module');
+        var Module = require('../src/module');
         var prop = 'myProp';
         var method = function () {};
         var customClassProps = {my: prop, custom: method};
@@ -17,7 +17,7 @@ describe('Module', function () {
     });
 
     it('should call its subclasses initialize method when subclass is instantiated', function () {
-        var Module = require('module');
+        var Module = require('../src/module');
         var method = function () {};
         var customClassProps = {initialize: sinon.spy()};
         var CustomClass = Module.extend(customClassProps);
@@ -28,7 +28,7 @@ describe('Module', function () {
     });
 
     it('should have its prototype method called when an overriding subclass method calls it', function () {
-        var Module = require('module');
+        var Module = require('../src/module');
         var method = function () {};
         var CustomClass = Module.extend({
             initialize: function () {
@@ -43,7 +43,7 @@ describe('Module', function () {
     });
 
     it('should pass subclass constructor options back to the subclass\'s initialize method', function () {
-        var Module = require('module');
+        var Module = require('../src/module');
         var customClassInitializeSpy = sinon.spy();
         var CustomClass = Module.extend({initialize: customClassInitializeSpy});
         sinon.stub(Module.prototype, 'initialize');
@@ -55,7 +55,7 @@ describe('Module', function () {
     });
 
     it('should NOT have its method called, when a method of a two-level nested child instance has the same method name', function () {
-        var Module = require('module');
+        var Module = require('../src/module');
         var subClassProps = {myMethod: sinon.spy()};
         var SubClass = Module.extend(subClassProps);
         var subClassInstance = new SubClass();
@@ -64,7 +64,7 @@ describe('Module', function () {
     });
 
     it('should NOT have its method called, when a method of a two-level nested child instance has the same method name', function () {
-        var Module = require('module');
+        var Module = require('../src/module');
         var subClassProps = {testMethod: null};
         var SubClass = Module.extend(subClassProps);
         var subClassedSubClassProps = {testMethod: sinon.spy()};
@@ -75,7 +75,7 @@ describe('Module', function () {
     });
 
     it('should not call handle load when already loaded', function (done) {
-        var Module = require('module');
+        var Module = require('../src/module');
         var method = function () {};
         var customClassProps = {_handleLoad: sinon.stub().returns(Promise.resolve())};
         var CustomClass = Module.extend(customClassProps);
@@ -95,7 +95,7 @@ describe('Module', function () {
     });
 
     it('should call onLoad() with first argument when load() is called', function () {
-        var Module = require('module');
+        var Module = require('../src/module');
         var module = new Module();
         var onLoadSpy = sinon.spy(module, 'onLoad');
         var mockOptions = {my: 'customModuleOptions'};
@@ -108,7 +108,7 @@ describe('Module', function () {
     });
 
     it('load() method should still return a promise even if onLoad() custom implementation doesnt', function () {
-        var Module = require('module');
+        var Module = require('../src/module');
         var onLoadStub = sinon.stub().returns(null);
         var CustomModule = Module.extend({onLoad: onLoadStub});
         var module = new CustomModule();
@@ -120,7 +120,7 @@ describe('Module', function () {
     });
 
     it('should call onShow() when show() is called', function () {
-        var Module = require('module');
+        var Module = require('../src/module');
         var module = new Module();
         var onShowSpy = sinon.spy(module, 'onShow');
         return module.show()
@@ -132,7 +132,7 @@ describe('Module', function () {
     });
 
     it('show() method should still return a promise even if onShow() custom implementation doesnt', function () {
-        var Module = require('module');
+        var Module = require('../src/module');
         var onShowStub = sinon.stub().returns(null);
         var CustomModule = Module.extend({onShow: onShowStub});
         var module = new CustomModule();
@@ -144,7 +144,7 @@ describe('Module', function () {
     });
 
     it('should call onHide() when hide() is called', function () {
-        var Module = require('module');
+        var Module = require('../src/module');
         var module = new Module();
         var onHideSpy = sinon.spy(module, 'onHide');
         return module.hide()
@@ -156,7 +156,7 @@ describe('Module', function () {
     });
 
     it('hide() method should still return a promise even if onShow() custom implementation doesnt', function () {
-        var Module = require('module');
+        var Module = require('../src/module');
         var onHideStub = sinon.stub().returns(null);
         var CustomModule = Module.extend({onHide: onHideStub});
         var module = new CustomModule();
@@ -168,7 +168,7 @@ describe('Module', function () {
     });
 
     it('should pass ResourceManager.loadCss() correct parameters when calling getStyles()', function () {
-        var Module = require('module');
+        var Module = require('../src/module');
         var resourceManagerGetStylesStub = sinon.stub(ResourceManager, 'loadCss').returns(Promise.resolve());
         var module = new Module();
         var styleUrls = ['my/styles'];

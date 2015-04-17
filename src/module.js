@@ -118,6 +118,24 @@ Module.prototype = {
             return Promise.resolve();
         }
     },
+    // TODO: merge the following function with one above
+
+    //load: function () {
+    //    var el = this.options.el;
+    //    return BaseModule.prototype.load.apply(this, arguments)
+    //        .then(function () {
+    //            if (el) {
+    //                el.classList.add('module-loaded');
+    //            }
+    //        }.bind(this))
+    //        .catch(function (e) {
+    //            if (el) {
+    //                el.classList.add('module-error');
+    //            }
+    //            console.log('MODULE ERROR!');
+    //            console.log(e.stack);
+    //        }.bind(this));
+    //},
 
     /**
      * Shows the page.
@@ -154,25 +172,22 @@ Module.prototype = {
     },
 
     /**
-     * Gets the data for the template to show on the page.
+     * Makes a request to get the data for the module.
+     * @returns {Promise}
+     * @deprecated since 1.0.5
+     */
+    getData: function () {
+        return this.fetchData.apply(this, arguments);
+    },
+
+    /**
+     * Makes a request to get the data for the module.
+     * @param {string} url - The url to fetch data from
+     * @param [options] - ajax options
      * @returns {*}
      */
-    getData: function (dataUrl) {
-        return new Promise(function (resolve, reject) {
-            if (dataUrl) {
-                var defaultOptions = {
-                    url: dataUrl,
-                    success: function (data) {
-                        data = this.serializeData(data);
-                        resolve(data);
-                    }.bind(this),
-                    error: reject
-                };
-                $.ajax(defaultOptions);
-            } else {
-                resolve();
-            }
-        }.bind(this));
+    fetchData: function (url, options) {
+        return ResourceManager.fetchData(url, options);
     },
 
     /**
