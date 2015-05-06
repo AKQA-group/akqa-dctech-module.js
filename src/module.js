@@ -145,20 +145,26 @@ Module.prototype = {
 
     /**
      * Loads.
-     * @param {Object} options - Options
+     * @param {Object} [options] - Options
+     * @param {HTMLElement} [options.el] - The modules element (used only if module element wasnt passed in initialize)
      * @return {Promise}
      */
     load: function (options) {
-        var views = _.values(this.subModules),
-            el = this.options.el;
+        var views = _.values(this.subModules);
+
+        // add element to options
+        if (options) {
+            this.options.el = this.options.el || options.el;
+        }
+
         // load all subModules
         if (!this.loaded) {
             return Promise.all(_.invoke(views, 'load')).then(function () {
                 return this._ensurePromise(this.onLoad(options))
                     .then(function () {
                         this.loaded = true;
-                        if (el) {
-                            el.classList.add(this.options.loadedClass);
+                        if (this.options.el) {
+                            this.options.el.classList.add(this.options.loadedClass);
                         }
                     }.bind(this))
                     .catch(function (e) {
