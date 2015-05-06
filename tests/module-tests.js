@@ -318,4 +318,32 @@ describe('Module', function () {
                 module.destroy();
             });
     });
+
+    it('should add module loaded to el passed through load() call', function () {
+        var Module = require('../src/module');
+        var onLoadStub = sinon.stub(Module.prototype, 'onLoad').returns(Promise.resolve());
+        var module = new Module();
+        var el = document.createElement('div');
+        return module.load({el: el})
+            .then(function () {
+                assert.ok(el.classList.contains('module-loaded'), 'on load() module loaded class was added');
+                module.destroy();
+                onLoadStub.restore();
+            });
+    });
+
+    it('should add module loaded class to el passed through initialize options over a different el passed to the load() call', function () {
+        var Module = require('../src/module');
+        var onLoadStub = sinon.stub(Module.prototype, 'onLoad').returns(Promise.resolve());
+        var initializeEl = document.createElement('div');
+        var module = new Module({el: initializeEl});
+        var loadEl = document.createElement('div');
+        return module.load({el: loadEl})
+            .then(function () {
+                assert.ok(initializeEl.classList.contains('module-loaded'), 'module loaded class was added to initialize el');
+                assert.ok(!loadEl.classList.contains('module-loaded'), 'module loaded class was NOT added to el passed in to load call');
+                module.destroy();
+                onLoadStub.restore();
+            });
+    });
 });
