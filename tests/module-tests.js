@@ -4,6 +4,7 @@ var Promise = require('promise');
 var ResourceManager = require('resource-manager-js');
 
 describe('Module', function () {
+
     it('should return correct instance when extending', function () {
         var Module = require('../src/module');
         var prop = 'myProp';
@@ -19,38 +20,31 @@ describe('Module', function () {
     it('should call its subclasses initialize method when subclass is instantiated', function () {
         var Module = require('../src/module');
         var method = function () {};
-        var customClassProps = {initialize: sinon.spy()};
+        var initializeSpy = sinon.spy();
+        var customClassProps = {
+            initialize: function () {
+                initializeSpy();
+                Module.prototype.initialize.call(this);
+            }};
         var CustomClass = Module.extend(customClassProps);
-        assert.equal(customClassProps.initialize.callCount, 0, 'subclasses initialize method was not called because it hasnt been instantiated');
+        assert.equal(initializeSpy.callCount, 0, 'subclasses initialize method was not called because it hasnt been instantiated');
         var customInstance = new CustomClass();
-        assert.equal(customClassProps.initialize.callCount, 1, 'after subclass is instantiated, its initialize method is called');
+        assert.equal(initializeSpy.callCount, 1, 'after subclass is instantiated, its initialize method is called');
         customInstance.destroy();
     });
 
     it('should have its prototype method called when an overriding subclass method calls it', function () {
         var Module = require('../src/module');
         var method = function () {};
+        var initializeSpy = sinon.spy();
         var CustomClass = Module.extend({
             initialize: function () {
+                initializeSpy();
                 Module.prototype.initialize.call(this);
             }
         });
-        sinon.stub(Module.prototype, 'initialize');
         var customInstance = new CustomClass();
-        assert.equal(Module.prototype.initialize.callCount, 1, 'Module\'s initialize method is called when custom class overrides it, but calls its prototype');
-        Module.prototype.initialize.restore();
-        customInstance.destroy();
-    });
-
-    it('should pass subclass constructor options back to the subclass\'s initialize method', function () {
-        var Module = require('../src/module');
-        var customClassInitializeSpy = sinon.spy();
-        var CustomClass = Module.extend({initialize: customClassInitializeSpy});
-        sinon.stub(Module.prototype, 'initialize');
-        var customClassOptions = {does: 'it work?'};
-        var customInstance = new CustomClass(customClassOptions);
-        assert.deepEqual(customClassInitializeSpy.args[0], [customClassOptions], 'subclass\'s initialize method was called with same options passed to its constructor');
-        Module.prototype.initialize.restore();
+        assert.equal(initializeSpy.callCount, 1, 'Module\'s initialize method is called when custom class overrides it, but calls its prototype');
         customInstance.destroy();
     });
 
@@ -74,24 +68,20 @@ describe('Module', function () {
         assert.equal(subClassedSubClassProps.testMethod.callCount, 1, 'when subclass A has a method that overrides the same method of the subclass it inherits from, subclass A gets called');
     });
 
-    it('should not call handle load when already loaded', function (done) {
+    it('should not call onLoad() when already loaded', function () {
         var Module = require('../src/module');
-        var method = function () {};
-        var customClassProps = {_handleLoad: sinon.stub().returns(Promise.resolve())};
+        var customClassProps = {onLoad: sinon.stub().returns(Promise.resolve())};
         var CustomClass = Module.extend(customClassProps);
         var customInstance = new CustomClass();
-        customInstance.load()
+        return customInstance.load()
             .then(function () {
-                assert.equal(customClassProps._handleLoad.callCount, 1, 'on first load() call _handle load was called');
-                customInstance.load()
+                assert.equal(customClassProps.onLoad.callCount, 1, 'on first load() call onLoad() was called');
+                return customInstance.load()
                     .then(function () {
-                        assert.equal(customClassProps._handleLoad.callCount, 1, 'on second load() call handle load was not called');
+                        assert.equal(customClassProps.onLoad.callCount, 1, 'on second load() call onLoad() was not called');
                         customInstance.destroy();
-                        done();
-                    })
-                    .catch(done);
-            })
-            .catch(done);
+                    });
+            });
     });
 
     it('should call onLoad() with first argument when load() is called', function () {
@@ -104,6 +94,73 @@ describe('Module', function () {
                 assert.deepEqual(onLoadSpy.args[0][0], mockOptions, 'on load() call onLoad() load was called with first arg passed to load call');
                 module.destroy();
                 onLoadSpy.restore();
+            });
+    });
+
+    it('should add module loaded css class when when load() call is successful', function () {
+        var Module = require('../src/module');
+        var onLoadStub = sinon.stub(Module.prototype, 'onLoad').returns(Promise.resolve());
+        var el = document.createElement('div');
+        var module = new Module({el: el});
+        return module.load()
+            .then(function () {
+                assert.ok(el.classList.contains('module-loaded'), 'on load() module loaded class was added');
+                module.destroy();
+                onLoadStub.restore();
+            });
+    });
+
+    it('should NOT add module loaded css class when when onLoad() promise is rejected', function () {
+        var Module = require('../src/module');
+        var error = new Error();
+        var onLoadStub = sinon.stub(Module.prototype, 'onLoad').returns(Promise.reject(error));
+        var el = document.createElement('div');
+        var module = new Module({el: el});
+        return module.load()
+            .then(function () {
+                assert.ok(!el.classList.contains('module-loaded'));
+                module.destroy();
+                onLoadStub.restore();
+            });
+    });
+
+    it('should trigger and error() with correct arguments when onLoad() promise is rejected', function () {
+        var Module = require('../src/module');
+        var error = new Error();
+        var onLoadStub = sinon.stub(Module.prototype, 'onLoad').returns(Promise.reject(error));
+        var el = document.createElement('div');
+        var errorStub = sinon.stub(Module.prototype, 'error');
+        var module = new Module({el: el});
+        return module.load()
+            .then(function () {
+                assert.deepEqual(errorStub.args[0][0], error, 'error() was called and passed error object as first argument');
+                module.destroy();
+                onLoadStub.restore();
+                errorStub.restore();
+            });
+    });
+
+    it('should call onError() when error() is called', function () {
+        var Module = require('../src/module');
+        var module = new Module();
+        var error = new Error();
+        var onErrorSpy = sinon.spy(module, 'onError');
+        return module.error(error)
+            .then(function () {
+                assert.deepEqual(onErrorSpy.args[0][0], error, 'onError() was called and passed error object as first parameter');
+                module.destroy();
+                onErrorSpy.restore();
+            });
+    });
+
+    it('should add module error css class when when error() is triggered', function () {
+        var Module = require('../src/module');
+        var el = document.createElement('div');
+        var module = new Module({el: el});
+        return module.error()
+            .then(function () {
+                assert.ok(el.classList.contains('module-error'));
+                module.destroy();
             });
     });
 
@@ -176,6 +233,88 @@ describe('Module', function () {
             .then(function () {
                 assert.deepEqual(resourceManagerGetStylesStub.args[0][0], styleUrls, 'first parameter passed to getStyles was passed to ResourceManager.loadCss()');
                 resourceManagerGetStylesStub.restore();
+                module.destroy();
+            });
+    });
+
+    it('should add module disabled css class when when disable() is called', function () {
+        var Module = require('../src/module');
+        var el = document.createElement('div');
+        var module = new Module({el: el});
+        return module.disable()
+            .then(function () {
+                assert.ok(el.classList.contains('module-disabled'));
+                module.destroy();
+            });
+    });
+
+    it('should call onDisable() when disable() is called', function () {
+        var Module = require('../src/module');
+        var module = new Module();
+        var onDisableSpy = sinon.spy(module, 'onDisable');
+        return module.disable()
+            .then(function () {
+                assert.deepEqual(onDisableSpy.callCount, 1, 'onDisable() was called');
+                module.destroy();
+                onDisableSpy.restore();
+            });
+    });
+
+    it('disable() method should still return a promise even if onDisable() custom implementation doesnt', function () {
+        var Module = require('../src/module');
+        var onDisableStub = sinon.stub().returns(null);
+        var CustomModule = Module.extend({onDisable: onDisableStub});
+        var module = new CustomModule();
+        return module.disable()
+            .then(function () {
+                assert.equal(onDisableStub.callCount, 1, 'test passed if this is called');
+                module.destroy();
+            });
+    });
+
+    it('should remove module disabled css class when enable() is called after disabled()', function () {
+        var Module = require('../src/module');
+        var el = document.createElement('div');
+        var module = new Module({el: el});
+        return module.disable().then(function () {
+            return module.enable().then(function () {
+                assert.ok(!el.classList.contains('module-disabled'));
+                module.destroy();
+            });
+        });
+    });
+
+    it('should call disable() immediately if element has module disabled css class applied before instantiation', function () {
+        var Module = require('../src/module');
+        var el = document.createElement('div');
+        var disableSpy = sinon.spy(Module.prototype, 'disable');
+        el.classList.add('module-disabled');
+        var module = new Module({el: el});
+        assert.equal(disableSpy.callCount, 1);
+        module.destroy();
+        disableSpy.restore();
+    });
+
+    it('should call onEnable() when enable() is called', function () {
+        var Module = require('../src/module');
+        var module = new Module();
+        var onEnableSpy = sinon.spy(module, 'onEnable');
+        return module.enable()
+            .then(function () {
+                assert.deepEqual(onEnableSpy.callCount, 1, 'onEnable() was called');
+                module.destroy();
+                onEnableSpy.restore();
+            });
+    });
+
+    it('enable() method should still return a promise even if onEnable() custom implementation doesnt', function () {
+        var Module = require('../src/module');
+        var onEnableStub = sinon.stub().returns(null);
+        var CustomModule = Module.extend({onEnable: onEnableStub});
+        var module = new CustomModule();
+        return module.enable()
+            .then(function () {
+                assert.equal(onEnableStub.callCount, 1, 'test passed if this is called');
                 module.destroy();
             });
     });
