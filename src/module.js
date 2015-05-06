@@ -62,11 +62,19 @@ Module.prototype = {
      * Initialization.
      * @param {Object} [options] - An object of options
      * @param {HTMLElement} [options.el] - The module element
+     * @param {string} [options.loadedClass] - The class that will be applied to the module element when it is loaded
+     * @param {string} [options.activeClass] - The class that will be applied to the module element when it is shown
+     * @param {string} [options.disabledClass] - The class that will be applied to the module element when disabled
+     * @param {string} [options.errorClass] - The class that will be applied to the module element when it has a load error
      */
     initialize: function (options) {
 
         this.options = _.extend({}, {
-            el: null
+            el: null,
+            loadedClass: 'module-loaded',
+            activeClass: 'module-active',
+            disabledClass: 'module-disabled',
+            errorClass: 'module-error'
         }, options);
 
         this._handleElementInitialState();
@@ -150,7 +158,7 @@ Module.prototype = {
                     .then(function () {
                         this.loaded = true;
                         if (el) {
-                            el.classList.add('module-loaded');
+                            el.classList.add(this.options.loadedClass);
                         }
                     }.bind(this))
                     .catch(function (e) {
@@ -173,7 +181,7 @@ Module.prototype = {
         e = e || new Error();
 
         if (el) {
-            el.classList.add('module-error');
+            el.classList.add(this.options.errorClass);
         }
         this.error = true;
         console.log('MODULE ERROR!');
@@ -191,7 +199,7 @@ Module.prototype = {
     enable: function () {
         var el = this.options.el;
         if (el) {
-            el.classList.remove('module-disabled');
+            el.classList.remove(this.options.disabledClass);
         }
         this.disabled = false;
         return this._ensurePromise(this.onEnable());
@@ -204,7 +212,7 @@ Module.prototype = {
     disable: function () {
         var el = this.options.el;
         if (el) {
-            el.classList.add('module-disabled');
+            el.classList.add(this.options.disabledClass);
         }
         this.disabled = true;
         return this._ensurePromise(this.onDisable());
@@ -220,7 +228,7 @@ Module.prototype = {
             console.warn('Module show() method was called before its load() method.');
         }
         if (el) {
-            el.classList.add('module-active');
+            el.classList.add(this.options.activeClass);
         }
         return this._ensurePromise(this.onShow());
     },
@@ -235,7 +243,7 @@ Module.prototype = {
             console.warn('Module hide() method was called before its load() method.');
         }
         if (el) {
-            el.classList.remove('module-active');
+            el.classList.remove(this.options.activeClass);
         }
         return this._ensurePromise(this.onHide());
     },
@@ -249,12 +257,12 @@ Module.prototype = {
         if (!el) {
             return;
         }
-        if (el.classList.contains('module-disabled')) {
+        if (el.classList.contains(this.options.disabledClass)) {
             this._origDisabled = true;
             this.disable();
         }
 
-        if (el.classList.contains('module-error')) {
+        if (el.classList.contains(this.options.errorClass)) {
             this._origError = true;
             this.error(new Error());
         }
@@ -265,20 +273,24 @@ Module.prototype = {
      * @private
      */
     _resetElementInitialState: function () {
-        var el = this.options.el;
+        var options = this.options,
+            el = options.el,
+            disabledClass = options.disabledClass,
+            errorClass = options.errorClass;
+
         if (!el) {
             return;
         }
         if (this._origDisabled) {
-            el.classList.add('module-disabled');
+            el.classList.add(disabledClass);
         } else {
-            el.classList.remove('module-disabled');
+            el.classList.remove(disabledClass);
         }
 
         if (!this._origError) {
-            el.classList.remove('module-error');
+            el.classList.remove(errorClass);
         } else {
-            el.classList.add('module-error');
+            el.classList.add(errorClass);
         }
     },
 
