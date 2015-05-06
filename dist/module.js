@@ -1,5 +1,5 @@
 /** 
-* module.js - v1.1.0.
+* module.js - v2.0.0.
 * git://github.com/mkay581/module.js.git
 * Copyright 2015 Mark Kennedy. Licensed MIT.
 */
@@ -12291,43 +12291,78 @@ Module.prototype = {
 
     /**
      * Initialization.
+     * @param {Object} [options] - An object of options
+     * @param {HTMLElement} [options.el] - The module element
      */
     initialize: function (options) {
-        this.options = options;
-        this.options = _.extend({}, options);
+
+        this.options = _.extend({}, {
+            el: null
+        }, options);
+
+        this._handleElementInitialState();
+
         this.subModules = {};
     },
 
     /**
-     * A load function that should be overridden by subclass for custom implementations.
+     * A function that fires when the module's load() method is called
+     * which can be overridden by subclass custom implementations.
      * @abstract
-     * @return {*} May returns a promise when done
+     * @return {*} May return a promise when done
      * @param options
      */
     onLoad: function (options) {
-        // support legacy _handleLoad method
-        if (this._handleLoad) {
-            return this._handleLoad(options);
-        } else {
-            return Promise.resolve();
-        }
+        return Promise.resolve();
     },
 
     /**
-     * A show function that should be overridden by subclass for custom implementations.
+     * A function that fires when the module's show() method is called
+     * which can be overridden by subclass custom implementations.
      * @abstract
-     * @return {*} May returns a promise when done
+     * @return {*} May return a promise when done
      */
     onShow: function () {
         return Promise.resolve();
     },
 
     /**
-     * A hide function that should be overridden by subclass for custom implementations.
+     * A function that fires when the module's hide() method is called
+     * which can be overridden by subclass custom implementations.
      * @abstract
-     * @return {*} May returns a promise when done
+     * @return {*} May return a promise when done
      */
     onHide: function () {
+        return Promise.resolve();
+    },
+
+    /**
+     * A function that fires when the module's enable() method is called
+     * which can be overridden by subclass custom implementations.
+     * @abstract
+     * @returns {*|Promise} Optionally return a promise when done
+     */
+    onEnable: function () {
+        return Promise.resolve();
+    },
+
+    /**
+     * A function that fires when the module's disable() method is called
+     * which can be overridden by subclass custom implementations.
+     * @abstract
+     * @returns {*|Promise} Optionally return a promise when done
+     */
+    onDisable: function () {
+        return Promise.resolve();
+    },
+
+    /**
+     * A function that fires when the error() method is called
+     * which can be overridden by subclass custom implementations.
+     * @abstract
+     * @returns {*|Promise} Optionally return a promise when done
+     */
+    onError: function () {
         return Promise.resolve();
     },
 
@@ -12337,44 +12372,86 @@ Module.prototype = {
      * @return {Promise}
      */
     load: function (options) {
-        var views = _.values(this.subModules);
+        var views = _.values(this.subModules),
+            el = this.options.el;
         // load all subModules
         if (!this.loaded) {
             return Promise.all(_.invoke(views, 'load')).then(function () {
-                return this._ensurePromise(this.onLoad(options)).then(function () {
-                    this.loaded = true;
-                }.bind(this));
+                return this._ensurePromise(this.onLoad(options))
+                    .then(function () {
+                        this.loaded = true;
+                        if (el) {
+                            el.classList.add('module-loaded');
+                        }
+                    }.bind(this))
+                    .catch(function (e) {
+                        this.error(e);
+                    }.bind(this));
             }.bind(this));
         } else {
             return Promise.resolve();
         }
     },
-    // TODO: merge the following function with one above
 
-    //load: function () {
-    //    var el = this.options.el;
-    //    return BaseModule.prototype.load.apply(this, arguments)
-    //        .then(function () {
-    //            if (el) {
-    //                el.classList.add('module-loaded');
-    //            }
-    //        }.bind(this))
-    //        .catch(function (e) {
-    //            if (el) {
-    //                el.classList.add('module-error');
-    //            }
-    //            console.log('MODULE ERROR!');
-    //            console.log(e.stack);
-    //        }.bind(this));
-    //},
+    /**
+     * Triggers a load error on the module.
+     * @param {Error} [e] - The error to trigger
+     * @return {Promise} Returns a promise when erroring operation is complete
+     */
+    error: function (e) {
+        var el = this.options.el;
+
+        e = e || new Error();
+
+        if (el) {
+            el.classList.add('module-error');
+        }
+        this.error = true;
+        console.log('MODULE ERROR!');
+        if (e.stack) {
+            console.log(e.stack);
+        }
+        this.loaded = false;
+        return this._ensurePromise(this.onError(e));
+    },
+
+    /**
+     * Enables the module.
+     * @return {Promise}
+     */
+    enable: function () {
+        var el = this.options.el;
+        if (el) {
+            el.classList.remove('module-disabled');
+        }
+        this.disabled = false;
+        return this._ensurePromise(this.onEnable());
+    },
+
+    /**
+     * Disables the module.
+     * @return {Promise}
+     */
+    disable: function () {
+        var el = this.options.el;
+        if (el) {
+            el.classList.add('module-disabled');
+        }
+        this.disabled = true;
+        return this._ensurePromise(this.onDisable());
+    },
 
     /**
      * Shows the page.
      * @return {Promise}
      */
     show: function () {
+        var el = this.options.el;
         if (!this.loaded) {
-            console.warn('Page show() method was called before its load() method.');
+            console.warn('Module show() method was called before its load() method.');
+        }
+        if (el) {
+            el.classList.add('module-active');
         }
         return this._ensurePromise(this.onShow());
     },
@@ -12384,10 +12461,56 @@ Module.prototype = {
      * @return {Promise}
      */
     hide: function () {
+        var el = this.options.el;
         if (!this.loaded) {
-            console.warn('Page hide() method was called before its load() method.');
+            console.warn('Module hide() method was called before its load() method.');
+        }
+        if (el) {
+            el.classList.remove('module-active');
         }
         return this._ensurePromise(this.onHide());
+    },
+
+    /**
+     * Sets up element internally by evaluating its initial state.
+     * @private
+     */
+    _handleElementInitialState: function () {
+        var el = this.options.el;
+        if (!el) {
+            return;
+        }
+        if (el.classList.contains('module-disabled')) {
+            this._origDisabled = true;
+            this.disable();
+        }
+
+        if (el.classList.contains('module-error')) {
+            this._origError = true;
+            this.error(new Error());
+        }
+    },
+
+    /**
+     * Restores the elements classes back to the way they were before instantiation.
+     * @private
+     */
+    _resetElementInitialState: function () {
+        var el = this.options.el;
+        if (!el) {
+            return;
+        }
+        if (this._origDisabled) {
+            el.classList.add('module-disabled');
+        } else {
+            el.classList.remove('module-disabled');
+        }
+
+        if (!this._origError) {
+            el.classList.remove('module-error');
+        } else {
+            el.classList.add('module-error');
+        }
     },
 
     /**
@@ -12400,15 +12523,6 @@ Module.prototype = {
             func = Promise.resolve();
         }
         return func;
-    },
-
-    /**
-     * Makes a request to get the data for the module.
-     * @returns {Promise}
-     * @deprecated since 1.0.5
-     */
-    getData: function () {
-        return this.fetchData.apply(this, arguments);
     },
 
     /**
@@ -12453,12 +12567,15 @@ Module.prototype = {
      */
     destroy: function () {
         var subModules = this.subModules;
+
         for (var key in subModules) {
             if (subModules.hasOwnProperty(key) && subModules[key]) {
                 subModules[key].destroy();
             }
         }
         this.subModules = {};
+
+        this._resetElementInitialState();
     }
 
 };
