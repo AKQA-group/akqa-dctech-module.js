@@ -1,5 +1,5 @@
 /** 
-* module.js - v2.1.1.
+* module.js - v2.2.0.
 * git://github.com/mkay581/module.js.git
 * Copyright 2015 Mark Kennedy. Licensed MIT.
 */
@@ -12467,6 +12467,7 @@ Module.prototype = {
         if (el) {
             el.classList.add(this.options.activeClass);
         }
+        this.active = true;
         return this._ensurePromise(this.onShow());
     },
 
@@ -12482,6 +12483,7 @@ Module.prototype = {
         if (el) {
             el.classList.remove(this.options.activeClass);
         }
+        this.active = false;
         return this._ensurePromise(this.onHide());
     },
 
@@ -12592,6 +12594,7 @@ Module.prototype = {
             }
         }
         this.subModules = {};
+        this.active = false;
 
         this._resetElementInitialState();
     }

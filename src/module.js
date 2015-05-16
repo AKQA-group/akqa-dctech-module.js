@@ -236,6 +236,7 @@ Module.prototype = {
         if (el) {
             el.classList.add(this.options.activeClass);
         }
+        this.active = true;
         return this._ensurePromise(this.onShow());
     },
 
@@ -251,6 +252,7 @@ Module.prototype = {
         if (el) {
             el.classList.remove(this.options.activeClass);
         }
+        this.active = false;
         return this._ensurePromise(this.onHide());
     },
 
@@ -361,6 +363,7 @@ Module.prototype = {
             }
         }
         this.subModules = {};
+        this.active = false;
 
         this._resetElementInitialState();
     }

@@ -346,4 +346,29 @@ describe('Module', function () {
                 onLoadStub.restore();
             });
     });
+
+    it('active boolean should return true when show() is called', function () {
+        var Module = require('../src/module');
+        var module = new Module();
+        module.show();
+        assert.deepEqual(module.active, true);
+        module.destroy();
+    });
+
+    it('active boolean should return false when hide() is called, after show()', function () {
+        var Module = require('../src/module');
+        var module = new Module();
+        module.show();
+        module.hide();
+        assert.deepEqual(module.active, false);
+        module.destroy();
+    });
+
+    it('active boolean should return false when destroy() is called, after show()', function () {
+        var Module = require('../src/module');
+        var module = new Module();
+        module.show();
+        module.destroy();
+        assert.deepEqual(module.active, false);
+    });
 });
