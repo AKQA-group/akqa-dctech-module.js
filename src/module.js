@@ -80,6 +80,7 @@ Module.prototype = {
         this._handleElementInitialState();
 
         this.subModules = {};
+        this.active = false;
     },
 
     /**

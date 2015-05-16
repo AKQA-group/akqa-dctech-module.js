@@ -351,7 +351,7 @@ describe('Module', function () {
         var Module = require('../src/module');
         var module = new Module();
         module.show();
-        assert.deepEqual(module.active, true);
+        assert.equal(module.active, true);
         module.destroy();
     });
 
@@ -360,7 +360,7 @@ describe('Module', function () {
         var module = new Module();
         module.show();
         module.hide();
-        assert.deepEqual(module.active, false);
+        assert.equal(module.active, false);
         module.destroy();
     });
 
@@ -369,6 +369,13 @@ describe('Module', function () {
         var module = new Module();
         module.show();
         module.destroy();
-        assert.deepEqual(module.active, false);
+        assert.equal(module.active, false);
+    });
+
+    it('active boolean should return false when initialized()', function () {
+        var Module = require('../src/module');
+        var module = new Module();
+        assert.equal(module.active, false);
+        module.destroy();
     });
 });
