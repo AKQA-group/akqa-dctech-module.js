@@ -378,4 +378,21 @@ describe('Module', function () {
         assert.equal(module.active, false);
         module.destroy();
     });
+
+    it('loaded boolean should return true after successful loaded()', function () {
+        var Module = require('../src/module');
+        var module = new Module();
+        module.load().then(function () {
+            module.destroy();
+            assert.equal(module.loaded, false);
+        });
+    });
+
+    it('loaded boolean should return false when destroy() is called after load()', function () {
+        var Module = require('../src/module');
+        var module = new Module();
+        module.load();
+        module.destroy();
+        assert.equal(module.loaded, false);
+    });
 });
