@@ -81,6 +81,7 @@ Module.prototype = {
 
         this.subModules = {};
         this.active = false;
+        this.loaded = false;
     },
 
     /**
@@ -359,6 +360,7 @@ Module.prototype = {
         }
         this.subModules = {};
         this.active = false;
+        this.loaded = false;
 
         this._resetElementInitialState();
     }
