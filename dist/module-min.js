@@ -1,6 +1,6 @@
 /** 
-* module.js - v2.2.2.
-* git://github.com/mkay581/module.js.git
+* module-js - v2.2.3.
+* https://github.com/mkay581/module-js.git
 * Copyright 2015 Mark Kennedy. Licensed MIT.
 */
 
