@@ -1,6 +1,6 @@
 {
   "name": "module-js",
-  "version": "2.2.2",
+  "version": "2.2.3",
   "description": "An extendable module class",
   "repository": {
     "type": "git",
