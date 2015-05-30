@@ -1,5 +1,5 @@
 /** 
-* module-js - v2.2.3.
+* module.js - v2.2.4.
 * https://github.com/mkay581/module-js.git
 * Copyright 2015 Mark Kennedy. Licensed MIT.
 */
@@ -10431,254 +10431,95 @@ function requestFlush() {
 
 }).call(this,require('_process'))
 },{"_process":3,"domain":1}],15:[function(require,module,exports){
-var Promise = require('promise');
-var $ = require('jquery');
+arguments[4][4][0].apply(exports,arguments)
+},{"dup":4}],16:[function(require,module,exports){
+arguments[4][5][0].apply(exports,arguments)
+},{"./lib":21,"dup":5}],17:[function(require,module,exports){
+arguments[4][6][0].apply(exports,arguments)
+},{"asap/raw":24,"dup":6}],18:[function(require,module,exports){
+arguments[4][7][0].apply(exports,arguments)
+},{"./core.js":17,"dup":7}],19:[function(require,module,exports){
+arguments[4][8][0].apply(exports,arguments)
+},{"./core.js":17,"asap/raw":24,"dup":8}],20:[function(require,module,exports){
+arguments[4][9][0].apply(exports,arguments)
+},{"./core.js":17,"dup":9}],21:[function(require,module,exports){
+arguments[4][10][0].apply(exports,arguments)
+},{"./core.js":17,"./done.js":18,"./es6-extensions.js":19,"./finally.js":20,"./node-extensions.js":22,"dup":10}],22:[function(require,module,exports){
+arguments[4][11][0].apply(exports,arguments)
+},{"./core.js":17,"asap":23,"dup":11}],23:[function(require,module,exports){
+(function (process){
+"use strict";
+
+var rawAsap = require("./raw");
+var freeTasks = [];
 
 /**
- * Custom request function (work in progress).
- * @returns {*}
+ * Calls a task as soon as possible after returning, in its own event, with
+ * priority over IO events. An exception thrown in a task can be handled by
+ * `process.on("uncaughtException") or `domain.on("error")`, but will otherwise
+ * crash the process. If the error is handled, all subsequent tasks will
+ * resume.
+ *
+ * @param {{call}} task A callable object, typically a function that takes no
+ * arguments.
  */
-var request = function (url, options) {
-    var client = new XMLHttpRequest();
-
-    options = options || {};
-    options.method = options.method || 'GET';
-    options.headers = options.headers || {};
-    options.async = typeof options.async === 'undefined' ? true : options.async;
-
-
-    return new Promise(
-        function (resolve, reject) {
-            // open connection
-            client.open(options.method, url);
-
-            // deal with headers
-            for (var i in options.headers) {
-                if (options.headers.hasOwnProperty(i)) {
-                    client.setRequestHeader(i, options.headers[i]);
-                }
-            }
-            // listener
-            client.onreadystatechange = function() {
-                if (this.readyState == 4 && this.status == 200) {
-                    resolve.call(this, this.responseText);
-                } else if (this.readyState == 4) {
-                    reject.call(this, this.status, this.statusText);
-                }
-            };
-            // send off
-            client.send(options.data);
-        });
-};
-
-'use strict';
-/**
- The Resource Manager.
- @class ResourceManager
- @description Represents a manager that loads any CSS and Javascript Resources on the fly.
- */
-var ResourceManager = function () {
-    this.initialize();
-};
-
-ResourceManager.prototype = {
-
-    /**
-     * Upon initialization.
-     * @memberOf ResourceManager
-     */
-    initialize: function () {
-        this._head = document.getElementsByTagName('head')[0];
-        this._cssPaths = {};
-        this._scriptPaths = {};
-        this._dataPromises = {};
-    },
-
-    /**
-     * Loads a javascript file.
-     * @param {string|Array} paths - The path to the view's js file
-     * @memberOf ResourceManager
-     * @return {Promise}
-     */
-    loadScript: function (paths) {
-        var script;
-        if (!this._loadScriptPromise) {
-            this._loadScriptPromise = new Promise(function (resolve) {
-                paths = this._ensurePathArray(paths);
-                paths.forEach(function (path) {
-                    if (!this._scriptPaths[path]) {
-                        this._scriptPaths[path] = path;
-                        script = this.createScriptElement();
-                        script.setAttribute('type','text/javascript');
-                        script.src = path;
-                        script.addEventListener('load', resolve);
-                        this._head.appendChild(script);
-                    }
-                }.bind(this));
-            }.bind(this));
-        } else {
-            this._loadScriptPromise = Promise.resolve();
-        }
-        return this._loadScriptPromise;
-    },
-
-    /**
-     * Removes a script that has the specified path from the head of the document.
-     * @param {string|Array} paths - The paths of the scripts to unload
-     * @memberOf ResourceManager
-     */
-    unloadScript: function (paths) {
-        var file;
-        return new Promise(function (resolve) {
-            paths = this._ensurePathArray(paths);
-            paths.forEach(function (path) {
-                file = this._head.querySelectorAll('script[src="' + path + '"]')[0];
-                if (file) {
-                    this._head.removeChild(file);
-                    this._scriptPaths[path] = null;
-                }
-            }.bind(this));
-            resolve();
-        }.bind(this));
-    },
-
-    /**
-     * Creates a new script element.
-     * @returns {HTMLElement}
-     */
-    createScriptElement: function () {
-        return document.createElement('script');
-    },
-
-    /**
-     * Makes a request to get data and caches it.
-     * @param {string} url - The url to fetch data from
-     * @param [options] - ajax options
-     * @returns {*}
-     */
-    fetchData: function (url, options) {
-        var objId = options ? JSON.stringify(options) : '',
-            cacheId = url + objId;
-
-        options = options || {};
-
-        if (!url) {
-            return Promise.resolve();
-        } else if (this._dataPromises[cacheId]) {
-            return this._dataPromises[cacheId];
-        } else {
-            this._dataPromises[cacheId] = new Promise(function (resolve, reject) {
-                $.ajax(url, options).done(resolve).fail(reject);
-            }.bind(this));
-            return this._dataPromises[cacheId].catch(function () {
-                    // if failure, remove cache so that subsequent
-                    // requests will trigger new ajax call
-                    this._dataPromises[cacheId] = null;
-                    reject(new Error('ResourceManager Failure: request for data at ' + url + ' failed.'));
-            }.bind(this));
-        }
-    },
-
-    /**
-     * Loads css files.
-     * @param {Array|String} paths - An array of css paths files to load
-     * @memberOf ResourceManager
-     * @return {Promise}
-     */
-    loadCss: function (paths) {
-        return new Promise(function (resolve) {
-            paths = this._ensurePathArray(paths);
-            paths.forEach(function (path) {
-                // TODO: figure out a way to find out when css is guaranteed to be loaded,
-                // and make this return a truely asynchronous promise
-                if (!this._cssPaths[path]) {
-                    var el = document.createElement('link');
-                    el.setAttribute('rel','stylesheet');
-                    el.setAttribute('href', path);
-                    this._head.appendChild(el);
-                    this._cssPaths[path] = el;
-                }
-            }.bind(this));
-            resolve();
-        }.bind(this));
-    },
-
-    /**
-     * Unloads css paths.
-     * @param {string|Array} paths - The css paths to unload
-     * @memberOf ResourceManager
-     * @return {Promise}
-     */
-    unloadCss: function (paths) {
-        var el;
-        return new Promise(function (resolve) {
-            paths = this._ensurePathArray(paths);
-            paths.forEach(function (path) {
-                el = this._cssPaths[path];
-                if (el) {
-                    this._head.removeChild(el);
-                    this._cssPaths[path] = null;
-                }
-            }.bind(this));
-            resolve();
-        }.bind(this));
-    },
-
-    /**
-     * Parses a template into a DOM element, then returns element back to you.
-     * @param {string} path - The path to the template
-     * @param {HTMLElement} [el] - The element to attach template to
-     * @returns {Promise} Returns a promise that resolves with contents of template file
-     */
-    loadTemplate: function (path, el) {
-        return new Promise(function (resolve) {
-            if (path) {
-                return request(path).then(function (contents) {
-                    if (el) {
-                        el.innerHTML = contents;
-                        contents = el;
-                    }
-                    resolve(contents);
-                });
-            } else {
-                // no path was supplied
-                resolve();
-            }
-        });
-    },
-
-    /**
-     * Makes sure that a path is converted to an array.
-     * @param paths
-     * @returns {*}
-     * @private
-     */
-    _ensurePathArray: function (paths) {
-        if (!paths) {
-            paths = [];
-        } else if (typeof paths === 'string') {
-            paths = [paths];
-        }
-        return paths;
-    },
-
-    /**
-     * Removes all cached resources.
-     * @memberOf ResourceManager
-     */
-    flush: function () {
-        this.unloadCss(Object.getOwnPropertyNames(this._cssPaths));
-        this._cssPaths = {};
-        this.unloadScript(Object.getOwnPropertyNames(this._scriptPaths));
-        this._scriptPaths = {};
-        this._dataPromises = {};
-        this._loadScriptPromise = null;
+module.exports = asap;
+function asap(task) {
+    var rawTask;
+    if (freeTasks.length) {
+        rawTask = freeTasks.pop();
+    } else {
+        rawTask = new RawTask();
     }
+    rawTask.task = task;
+    rawTask.domain = process.domain;
+    rawAsap(rawTask);
+}
 
+function RawTask() {
+    this.task = null;
+    this.domain = null;
+}
+
+RawTask.prototype.call = function () {
+    if (this.domain) {
+        this.domain.enter();
+    }
+    var threw = true;
+    try {
+        this.task.call();
+        threw = false;
+        // If the task throws an exception (presumably) Node.js restores the
+        // domain stack for the next event.
+        if (this.domain) {
+            this.domain.exit();
+        }
+    } finally {
+        // We use try/finally and a threw flag to avoid messing up stack traces
+        // when we catch and release errors.
+        if (threw) {
+            // In Node.js, uncaught exceptions are considered fatal errors.
+            // Re-throw them to interrupt flushing!
+            // Ensure that flushing continues if an uncaught exception is
+            // suppressed listening process.on("uncaughtException") or
+            // domain.on("error").
+            rawAsap.requestFlush();
+        }
+        // If the task threw an error, we do not want to exit the domain here.
+        // Exiting the domain would prevent the domain from catching the error.
+        this.task = null;
+        this.domain = null;
+        freeTasks.push(this);
+    }
 };
 
-module.exports = new ResourceManager();
-},{"jquery":4,"promise":5}],16:[function(require,module,exports){
+
+}).call(this,require('_process'))
+},{"./raw":25,"_process":3}],24:[function(require,module,exports){
+arguments[4][13][0].apply(exports,arguments)
+},{"dup":13}],25:[function(require,module,exports){
+arguments[4][14][0].apply(exports,arguments)
+},{"_process":3,"domain":1,"dup":14}],26:[function(require,module,exports){
 //     Underscore.js 1.8.3
 //     http://underscorejs.org
 //     (c) 2009-2015 Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -12228,7 +12069,263 @@ module.exports = new ResourceManager();
   }
 }.call(this));
 
-},{}],17:[function(require,module,exports){
+},{}],27:[function(require,module,exports){
+var Promise = require('promise');
+var $ = require('jquery');
+var _ = require('underscore');
+
+/**
+ * Custom request function (work in progress).
+ * @returns {*}
+ */
+var request = function (url, options) {
+    var client = new XMLHttpRequest();
+
+    options = options || {};
+    options.method = options.method || 'GET';
+    options.headers = options.headers || {};
+    options.async = typeof options.async === 'undefined' ? true : options.async;
+
+
+    return new Promise(
+        function (resolve, reject) {
+            // open connection
+            client.open(options.method, url);
+
+            // deal with headers
+            for (var i in options.headers) {
+                if (options.headers.hasOwnProperty(i)) {
+                    client.setRequestHeader(i, options.headers[i]);
+                }
+            }
+            // listener
+            client.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    resolve.call(this, this.responseText);
+                } else if (this.readyState == 4) {
+                    reject.call(this, this.status, this.statusText);
+                }
+            };
+            // send off
+            client.send(options.data);
+        });
+};
+
+'use strict';
+/**
+ The Resource Manager.
+ @class ResourceManager
+ @description Represents a manager that loads any CSS and Javascript Resources on the fly.
+ */
+var ResourceManager = function () {
+    this.initialize();
+};
+
+ResourceManager.prototype = {
+
+    /**
+     * Upon initialization.
+     * @memberOf ResourceManager
+     */
+    initialize: function () {
+        this._head = document.getElementsByTagName('head')[0];
+        this._cssPaths = {};
+        this._scriptMaps = {};
+        this._dataPromises = {};
+    },
+
+    /**
+     * Loads a javascript file.
+     * @param {string|Array} paths - The path to the view's js file
+     * @memberOf ResourceManager
+     * @return {Promise} Returns a promise that resolves when all scripts have been loaded
+     */
+    loadScript: function (paths) {
+        var script,
+            map,
+            loadPromises = [];
+        paths = this._ensurePathArray(paths);
+        paths.forEach(function (path) {
+            map = this._scriptMaps[path] = this._scriptMaps[path] || {};
+            if (!map.promise) {
+                map.path = path;
+                map.promise = new Promise(function (resolve) {
+                    script = this.createScriptElement();
+                    script.setAttribute('type','text/javascript');
+                    script.src = path;
+                    script.addEventListener('load', resolve);
+                    this._head.appendChild(script);
+                }.bind(this));
+            }
+            loadPromises.push(map.promise);
+        }.bind(this));
+        return Promise.all(loadPromises);
+    },
+
+    /**
+     * Removes a script that has the specified path from the head of the document.
+     * @param {string|Array} paths - The paths of the scripts to unload
+     * @memberOf ResourceManager
+     */
+    unloadScript: function (paths) {
+        var file;
+        return new Promise(function (resolve) {
+            paths = this._ensurePathArray(paths);
+            paths.forEach(function (path) {
+                file = this._head.querySelectorAll('script[src="' + path + '"]')[0];
+                if (file) {
+                    this._head.removeChild(file);
+                    delete this._scriptMaps[path];
+                }
+            }.bind(this));
+            resolve();
+        }.bind(this));
+    },
+
+    /**
+     * Creates a new script element.
+     * @returns {HTMLElement}
+     */
+    createScriptElement: function () {
+        return document.createElement('script');
+    },
+
+    /**
+     * Makes a request to get data and caches it.
+     * @param {string} url - The url to fetch data from
+     * @param [options] - ajax options
+     * @returns {*}
+     */
+    fetchData: function (url, options) {
+        var objId = options ? JSON.stringify(options) : '',
+            cacheId = url + objId,
+            promise;
+
+        options = options || {};
+
+        if (!url) {
+            return Promise.resolve();
+        } else if (this._dataPromises[cacheId]) {
+            return this._dataPromises[cacheId];
+        } else {
+            this._dataPromises[cacheId] = new Promise(function (resolve, reject) {
+                $.ajax(url, options).done(resolve).fail(function (jqXHR, textStatus, errorThrown) {
+                    reject(errorThrown);
+                });
+            }.bind(this));
+            return this._dataPromises[cacheId].catch(function (e) {
+                // if failure, remove cache so that subsequent
+                // requests will trigger new ajax call
+                this._dataPromises[cacheId] = null;
+                throw e;
+            }.bind(this));
+        }
+    },
+
+    /**
+     * Loads css files.
+     * @param {Array|String} paths - An array of css paths files to load
+     * @memberOf ResourceManager
+     * @return {Promise}
+     */
+    loadCss: function (paths) {
+        return new Promise(function (resolve) {
+            paths = this._ensurePathArray(paths);
+            paths.forEach(function (path) {
+                // TODO: figure out a way to find out when css is guaranteed to be loaded,
+                // and make this return a truely asynchronous promise
+                if (!this._cssPaths[path]) {
+                    var el = document.createElement('link');
+                    el.setAttribute('rel','stylesheet');
+                    el.setAttribute('href', path);
+                    this._head.appendChild(el);
+                    this._cssPaths[path] = el;
+                }
+            }.bind(this));
+            resolve();
+        }.bind(this));
+    },
+
+    /**
+     * Unloads css paths.
+     * @param {string|Array} paths - The css paths to unload
+     * @memberOf ResourceManager
+     * @return {Promise}
+     */
+    unloadCss: function (paths) {
+        var el;
+        return new Promise(function (resolve) {
+            paths = this._ensurePathArray(paths);
+            paths.forEach(function (path) {
+                el = this._cssPaths[path];
+                if (el) {
+                    this._head.removeChild(el);
+                    this._cssPaths[path] = null;
+                }
+            }.bind(this));
+            resolve();
+        }.bind(this));
+    },
+
+    /**
+     * Parses a template into a DOM element, then returns element back to you.
+     * @param {string} path - The path to the template
+     * @param {HTMLElement} [el] - The element to attach template to
+     * @returns {Promise} Returns a promise that resolves with contents of template file
+     */
+    loadTemplate: function (path, el) {
+        return new Promise(function (resolve) {
+            if (path) {
+                return request(path).then(function (contents) {
+                    if (el) {
+                        el.innerHTML = contents;
+                        contents = el;
+                    }
+                    resolve(contents);
+                });
+            } else {
+                // no path was supplied
+                resolve();
+            }
+        });
+    },
+
+    /**
+     * Makes sure that a path is converted to an array.
+     * @param paths
+     * @returns {*}
+     * @private
+     */
+    _ensurePathArray: function (paths) {
+        if (!paths) {
+            paths = [];
+        } else if (typeof paths === 'string') {
+            paths = [paths];
+        }
+        return paths;
+    },
+
+    /**
+     * Removes all cached resources.
+     * @memberOf ResourceManager
+     */
+    flush: function () {
+        this.unloadCss(Object.getOwnPropertyNames(this._cssPaths));
+        this._cssPaths = {};
+        _.each(this._scriptMaps, function (map) {
+            this.unloadScript(map.path);
+        }.bind(this));
+        this._scriptMaps = {};
+        this._dataPromises = {};
+        this._loadScriptPromise = null;
+    }
+
+};
+
+module.exports = new ResourceManager();
+},{"jquery":15,"promise":16,"underscore":26}],28:[function(require,module,exports){
+arguments[4][26][0].apply(exports,arguments)
+},{"dup":26}],29:[function(require,module,exports){
 'use strict';
 
 var Promise = require('promise');
@@ -12369,11 +12466,12 @@ Module.prototype = {
     /**
      * A function that fires when the error() method is called
      * which can be overridden by subclass custom implementations.
+     * @param {Object} [e] - The error object that was triggered
      * @abstract
-     * @returns {*|Promise} Optionally return a promise when done
+     * @returns {*} Optionally return a promise when done
      */
-    onError: function () {
-        return Promise.resolve();
+    onError: function (e) {
+        return Promise.resolve(e);
     },
 
     /**
@@ -12402,6 +12500,7 @@ Module.prototype = {
                     }.bind(this))
                     .catch(function (e) {
                         this.error(e);
+                        return e;
                     }.bind(this));
             }.bind(this));
         } else {
@@ -12411,24 +12510,29 @@ Module.prototype = {
 
     /**
      * Triggers a load error on the module.
-     * @param {Error} [e] - The error to trigger
+     * @param {Object} [err] - The error object to trigger
      * @return {Promise} Returns a promise when erroring operation is complete
      */
-    error: function (e) {
-        var el = this.options.el;
-
-        e = e || new Error();
+    error: function (err) {
+        var el = this.options.el,
+            e = err || new Error(),
+            msg = e.message || '';
 
         if (el) {
             el.classList.add(this.options.errorClass);
         }
         this.error = true;
-        console.log('MODULE ERROR!');
+        this.loaded = false;
+
+        console.warn('MODULE ERROR!' + ' ' + msg);
+
         if (e.stack) {
             console.log(e.stack);
         }
-        this.loaded = false;
-        return this._ensurePromise(this.onError(e));
+        return this._ensurePromise(this.onError(e))
+            .then(function (customErr) {
+                return customErr || e;
+            });
     },
 
     /**
@@ -12600,4 +12704,4 @@ Module.prototype = {
 
 
 module.exports = Module;
-},{"jquery":4,"promise":5,"resource-manager-js":15,"underscore":16}]},{},[17]);
+},{"jquery":4,"promise":5,"resource-manager-js":27,"underscore":28}]},{},[29]);

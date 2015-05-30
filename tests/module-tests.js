@@ -395,4 +395,41 @@ describe('Module', function () {
         module.destroy();
         assert.equal(module.loaded, false);
     });
+
+    it('should resolve error() promise with first parameter passed to it', function () {
+        var Module = require('../src/module');
+        var el = document.createElement('div');
+        var module = new Module({el: el});
+        var testErrorObj = {details: 'my error'};
+        return module.error(testErrorObj).then(function (err) {
+            assert.deepEqual(testErrorObj, err);
+            module.destroy();
+        });
+    });
+
+    it('should resolve error() promise with the first parameter passed to it when onError() resolves without returning an error object', function () {
+        var Module = require('../src/module');
+        var onErrorStub = sinon.stub(Module.prototype, 'onError').returns(Promise.resolve());
+        var el = document.createElement('div');
+        var module = new Module({el: el});
+        var testErrorObj = {details: 'my passed error'};
+        return module.error(testErrorObj).then(function (err) {
+            assert.deepEqual(testErrorObj, err);
+            module.destroy();
+            onErrorStub.restore();
+        });
+    });
+
+    it('should resolve error() promise with custom error of onError()', function () {
+        var Module = require('../src/module');
+        var testErrorObj = {details: 'my passed error'};
+        var onErrorStub = sinon.stub(Module.prototype, 'onError').returns(Promise.resolve(testErrorObj));
+        var el = document.createElement('div');
+        var module = new Module({el: el});
+        return module.error().then(function (err) {
+            assert.deepEqual(testErrorObj, err);
+            module.destroy();
+            onErrorStub.restore();
+        });
+    });
 });
