@@ -138,11 +138,12 @@ Module.prototype = {
     /**
      * A function that fires when the error() method is called
      * which can be overridden by subclass custom implementations.
+     * @param {Object} [e] - The error object that was triggered
      * @abstract
-     * @returns {*|Promise} Optionally return a promise when done
+     * @returns {*} Optionally return a promise when done
      */
-    onError: function () {
-        return Promise.resolve();
+    onError: function (e) {
+        return Promise.resolve(e);
     },
 
     /**
@@ -171,6 +172,7 @@ Module.prototype = {
                     }.bind(this))
                     .catch(function (e) {
                         this.error(e);
+                        return e;
                     }.bind(this));
             }.bind(this));
         } else {
@@ -180,24 +182,29 @@ Module.prototype = {
 
     /**
      * Triggers a load error on the module.
-     * @param {Error} [e] - The error to trigger
+     * @param {Object} [err] - The error object to trigger
      * @return {Promise} Returns a promise when erroring operation is complete
      */
-    error: function (e) {
-        var el = this.options.el;
-
-        e = e || new Error();
+    error: function (err) {
+        var el = this.options.el,
+            e = err || new Error(),
+            msg = e.message || '';
 
         if (el) {
             el.classList.add(this.options.errorClass);
         }
         this.error = true;
-        console.log('MODULE ERROR!');
+        this.loaded = false;
+
+        console.warn('MODULE ERROR!' + ' ' + msg);
+
         if (e.stack) {
             console.log(e.stack);
         }
-        this.loaded = false;
-        return this._ensurePromise(this.onError(e));
+        return this._ensurePromise(this.onError(e))
+            .then(function (customErr) {
+                return customErr || e;
+            });
     },
 
     /**
